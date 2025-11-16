@@ -7,7 +7,8 @@ from telegram.ext import (
     ContextTypes
 )
 
-BOT_TOKEN = "token"
+import os
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 START_TEXT = (
     "Привет! Я Гороскоп Не Бесит 🌸\n"
