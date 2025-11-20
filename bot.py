@@ -1,14 +1,22 @@
+import os
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
+    ContextTypes,
     filters,
-    ContextTypes
 )
 
-import os
+# Берём токен и URL для вебхука из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # пример: https://goroskop-ne-besit-bot.onrender.com
+
+if not BOT_TOKEN:
+    raise RuntimeError("Не задана переменная окружения BOT_TOKEN")
+
+if not WEBHOOK_URL:
+    raise RuntimeError("Не задана переменная окружения WEBHOOK_URL")
 
 START_TEXT = (
     "Привет! Я Гороскоп Не Бесит 🌸\n"
@@ -45,13 +53,26 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Выбери знак с кнопок ниже 😌")
 
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    print("Бот запущен!")
-    app.run_polling()
+    # Порт, который даёт Render
+    port = int(os.getenv("PORT", "8443"))
+
+    # webhook_url = https://твоё_имя.onrender.com/ТОКЕН
+    hook_url = f"{WEBHOOK_URL.rstrip('/')}/{BOT_TOKEN}"
+
+    print(f"Запускаю webhook на порту {port}")
+    print(f"Webhook URL: {hook_url}")
+
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=BOT_TOKEN,
+        webhook_url=hook_url,
+    )
 
 if __name__ == "__main__":
     main()
